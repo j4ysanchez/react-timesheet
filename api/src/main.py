@@ -1,59 +1,46 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from databases import Database
+from confluent_kafka import Producer
+from enum import Enum
+import json
 
-# Update the DATABASE_URL to use PostgreSQL
-DATABASE_URL = "postgresql://user:password@localhost/dbname"
+# Kafka configuration
+KAFKA_BROKER_URL = "localhost:9092"
+KAFKA_TOPIC = "worker-logs"
 
-database = Database(DATABASE_URL)
-metadata = sqlalchemy.MetaData()
-
-Base = declarative_base()
-
-class LogEntryDB(Base):
-    __tablename__ = "logs"
-    id = Column(Integer, primary_key=True, index=True)
-    start = Column(DateTime, nullable=False)
-    stop = Column(DateTime, nullable=False)
-    duration = Column(String, nullable=False)
-
-engine = create_engine(DATABASE_URL)
-Base.metadata.create_all(bind=engine)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Create Kafka producer
+producer = Producer({'bootstrap.servers': KAFKA_BROKER_URL})
 
 app = FastAPI()
 
+class LogType(str, Enum):
+    work_start = "work_start"
+    work_stop = "work_stop"
+
 class LogEntry(BaseModel):
-    start: datetime
-    stop: datetime
-    duration: str
+    timestamp: datetime
+    worker_id: int
+    logtype: LogType
+    duration: str = None
 
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+def delivery_report(err, msg):
+    """ Called once for each message produced to indicate delivery result.
+        Triggered by poll() or flush(). """
+    if err is not None:
+        print(f"Message delivery failed: {err}")
+    else:
+        print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
 
 @app.post("/logs", response_model=LogEntry)
 async def create_log(log: LogEntry):
-    query = LogEntryDB.__table__.insert().values(
-        start=log.start,
-        stop=log.stop,
-        duration=log.duration
-    )
-    await database.execute(query)
+    log_dict = log.dict()
+    log_json = json.dumps(log_dict)
+    producer.produce(KAFKA_TOPIC, log_json.encode('utf-8'), callback=delivery_report)
+    producer.flush()
     return log
 
 @app.get("/logs", response_model=List[LogEntry])
 async def get_logs():
-    query = LogEntryDB.__table__.select()
-    results = await database.fetch_all(query)
-    return results
+    raise HTTPException(status_code=501, detail="Not Implemented")
