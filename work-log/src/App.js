@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
@@ -6,17 +6,25 @@ function App() {
   const [startTime, setStartTime] = useState(null);
   const [logs, setLogs] = useState([]);
 
+  useEffect(() => {
+    const storedLogs = JSON.parse(localStorage.getItem('workLogs')) || [];
+    setLogs(storedLogs);
+  }, []);
+
   const handleButtonClick = () => {
     const currentTime = new Date();
-    console.log(`Button pressed at: ${currentTime}`);
+    const currentTimeUTC = currentTime.toISOString(); // Store in UTC
+    console.log(`Button pressed at: ${currentTimeUTC}`);
 
     if (!isWorking) {
       const newLog = {
-        start: currentTime.toLocaleString(),
+        start: currentTimeUTC,
         stop: '',
         duration: ''
       };
-      setLogs([...logs, newLog]);
+      const updatedLogs = [...logs, newLog];
+      setLogs(updatedLogs);
+      localStorage.setItem('workLogs', JSON.stringify(updatedLogs));
       setStartTime(currentTime);
     } else {
       const durationMs = currentTime - startTime;
@@ -30,7 +38,7 @@ function App() {
         if (index === logs.length - 1) {
           return {
             ...log,
-            stop: currentTime.toLocaleString(),
+            stop: currentTimeUTC,
             duration: formattedDuration
           };
         }
@@ -38,17 +46,30 @@ function App() {
       });
 
       setLogs(updatedLogs);
+      localStorage.setItem('workLogs', JSON.stringify(updatedLogs));
     }
 
     setIsWorking(!isWorking);
   };
 
+  const handleClearLogs = () => {
+    localStorage.removeItem('workLogs');
+    setLogs([]);
+  };
+
+  const formatToLocaleString = (utcString) => {
+    const date = new Date(utcString);
+    return date.toLocaleString();
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
+      <header className="
+      App-header">
         <button onClick={handleButtonClick}>
           {isWorking ? 'Stop Work' : 'Start Work'}
         </button>
+
         <table className="fixed-width-table">
           <thead>
             <tr>
@@ -60,13 +81,17 @@ function App() {
           <tbody>
             {logs.map((log, index) => (
               <tr key={index}>
-                <td>{log.start}</td>
-                <td>{log.stop}</td>
+                <td>{log.start ? formatToLocaleString(log.start) : ''}</td>
+                <td>{log.stop ? formatToLocaleString(log.stop) : ''}</td>
                 <td>{log.duration}</td>
               </tr>
             ))}
+
           </tbody>
-        </table>
+        </table>        
+        <button onClick={handleClearLogs}>
+          Clear Logs
+        </button>
       </header>
     </div>
   );
