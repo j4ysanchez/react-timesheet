@@ -16,38 +16,32 @@ function App() {
     const currentTimeUTC = currentTime.toISOString(); // Store in UTC
     console.log(`Button pressed at: ${currentTimeUTC}`);
 
+    let newLog;
     if (!isWorking) {
-      const newLog = {
-        start: currentTimeUTC,
-        stop: '',
-        duration: ''
+      newLog = {
+        workType: 'start',
+        timestamp: currentTimeUTC,
+        duration: null
       };
-      const updatedLogs = [...logs, newLog];
-      setLogs(updatedLogs);
-      localStorage.setItem('workLogs', JSON.stringify(updatedLogs));
       setStartTime(currentTime);
     } else {
       const durationMs = currentTime - startTime;
       const durationSeconds = Math.round(durationMs / 1000);
-      const hours = Math.floor(durationSeconds / 3600);
-      const minutes = Math.floor((durationSeconds % 3600) / 60);
-      const seconds = durationSeconds % 60;
+      const hours = Math.floor(durationSeconds / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((durationSeconds % 3600) / 60).toString().padStart(2, '0');
+      const seconds = (durationSeconds % 60).toString().padStart(2, '0');
       const formattedDuration = `${hours}:${minutes}:${seconds}`;
-
-      const updatedLogs = logs.map((log, index) => {
-        if (index === logs.length - 1) {
-          return {
-            ...log,
-            stop: currentTimeUTC,
-            duration: formattedDuration
-          };
-        }
-        return log;
-      });
-
-      setLogs(updatedLogs);
-      localStorage.setItem('workLogs', JSON.stringify(updatedLogs));
+  
+      newLog = {
+        workType: 'stop',
+        timestamp: currentTimeUTC,
+        duration: formattedDuration
+      };
     }
+
+    const updatedLogs = [...logs, newLog];
+    setLogs(updatedLogs);
+    localStorage.setItem('workLogs', JSON.stringify(updatedLogs));
 
     setIsWorking(!isWorking);
   };
@@ -64,32 +58,29 @@ function App() {
 
   return (
     <div className="App">
-      <header className="
-      App-header">
+      <header className="App-header">
         <button onClick={handleButtonClick}>
           {isWorking ? 'Stop Work' : 'Start Work'}
         </button>
-
         <table className="fixed-width-table">
           <thead>
             <tr>
-              <th>Work Start</th>
-              <th>Work Stop</th>
-              <th>Duration (hh:mm:ss)</th>
+              <th>Work Type</th>
+              <th>Timestamp (Local)</th>
+              <th>Duration</th>
             </tr>
           </thead>
           <tbody>
             {logs.map((log, index) => (
               <tr key={index}>
-                <td>{log.start ? formatToLocaleString(log.start) : ''}</td>
-                <td>{log.stop ? formatToLocaleString(log.stop) : ''}</td>
-                <td>{log.duration}</td>
+                <td>{log.workType}</td>
+                <td>{formatToLocaleString(log.timestamp)}</td>
+                <td>{log.duration || '-'}</td>
               </tr>
             ))}
-
           </tbody>
-        </table>        
-        <button onClick={handleClearLogs}>
+        </table>
+        <button onClick={handleClearLogs} style={{ marginTop: '20px' }}>
           Clear Logs
         </button>
       </header>
