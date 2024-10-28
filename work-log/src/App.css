@@ -11,9 +11,13 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  padding: 20px;
+  box-sizing: border-box;
 }
+
 .fixed-width-table {
-  width: 80%;
+  width: 100%;
+  max-width: 800px;
   margin: 20px auto;
   border-collapse: collapse;
 }
@@ -28,7 +32,54 @@
   background-color: #5DADE2; /* Darker blue color for better contrast */
   color: white;
 }
-
 .start-log {
   border-top: 6px solid #ddd; /* Dark blue color */
+}
+
+
+.action-button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.start-button {
+  background-color: #4CAF50;
+}
+
+.start-button:hover {
+  background-color: #45a049;
+}
+
+.stop-button {
+  background-color: #f44336;
+}
+
+.stop-button:hover {
+  background-color: #e53935;
+}
+
+.clear-button {
+  background-color: #ff9800; /* Orange color for warning */
+}
+
+.clear-button:hover {
+  background-color: #fb8c00; /* Darker orange color for hover */
+}
+
+@media (max-width: 600px) {
+  .fixed-width-table th,
+  .fixed-width-table td {
+    padding: 4px;
+  }
+
+  .action-button {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+  }
 }

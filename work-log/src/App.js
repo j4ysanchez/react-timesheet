@@ -65,7 +65,10 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <button onClick={handleButtonClick}>
+        <button
+          onClick={handleButtonClick}
+          className={`action-button ${isWorking ? 'stop-button' : 'start-button'}`}
+        >
           {isWorking ? 'Stop Work' : 'Start Work'}
         </button>
         <table className="fixed-width-table">
@@ -88,7 +91,7 @@ function App() {
             ))}
           </tbody>
         </table>
-        <button onClick={handleClearLogs} style={{ marginTop: '20px' }}>
+        <button onClick={handleClearLogs} className="action-button clear-button">
           Clear Logs
         </button>
       </header>
