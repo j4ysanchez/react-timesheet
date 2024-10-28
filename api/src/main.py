@@ -1,10 +1,9 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from typing import List
+from fastapi import FastAPI
+from pydantic import BaseModel
+from enum import Enum
 from datetime import datetime
 from confluent_kafka import Producer
-from enum import Enum
-import json
+from fastapi.encoders import jsonable_encoder
 
 # Kafka configuration
 KAFKA_BROKER_URL = "localhost:9092"
@@ -23,7 +22,6 @@ class LogEntry(BaseModel):
     timestamp: datetime
     worker_id: int
     logtype: LogType
-    duration: str = None
 
 def delivery_report(err, msg):
     """ Called once for each message produced to indicate delivery result.
@@ -35,12 +33,7 @@ def delivery_report(err, msg):
 
 @app.post("/logs", response_model=LogEntry)
 async def create_log(log: LogEntry):
-    log_dict = log.dict()
-    log_json = json.dumps(log_dict)
-    producer.produce(KAFKA_TOPIC, log_json.encode('utf-8'), callback=delivery_report)
+    log_data = jsonable_encoder(log)
+    producer.produce(KAFKA_TOPIC, key=str(log.worker_id), value=str(log_data), callback=delivery_report)
     producer.flush()
     return log
-
-@app.get("/logs", response_model=List[LogEntry])
-async def get_logs():
-    raise HTTPException(status_code=501, detail="Not Implemented")
